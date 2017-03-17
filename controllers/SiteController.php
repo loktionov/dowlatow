@@ -51,6 +51,7 @@ class SiteController extends Controller
         ];
     }
 
+
     /**
      * Displays homepage.
      *
@@ -58,14 +59,8 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        $session = Yii::$app->session;
-        if (empty($session['values'])) {
-            $values = self::getRandValues();
-            $session['values'] = serialize($values);
-        } else {
-            $values = unserialize($session['values']);
-        }
-        return $this->render('index', ['values' => $values]);
+
+        return $this->render('index', ['values' => self::getRandValues(true)]);
     }
 
     public function actionAjax()
@@ -73,20 +68,41 @@ class SiteController extends Controller
         if (!Yii::$app->request->isAjax) {
             Yii::$app->end();
         }
-        $values = self::getRandValues();
-        Yii::$app->session['values'] = serialize($values);
-        echo json_encode($values);
+        echo json_encode(self::getRandValues());
         Yii::$app->end();
+    }
+
+    /**
+     * @param bool $from_session
+     * @return array
+     */
+    public static function getRandValues($from_session = false): array
+    {
+        if ($from_session) {
+            $session = Yii::$app->session;
+            if (empty($session['values'])) {
+                $values = self::getRandArray();
+            } else {
+                $values = unserialize($session['values']);
+                if ($values === false OR !is_array($values) OR count($values) != 3) {
+                    $values = self::getRandArray();
+                }
+            }
+        } else {
+            $values = self::getRandArray();
+        }
+        return $values;
     }
 
     /**
      * @return array
      */
-    public static function getRandValues(): array
+    private static function getRandArray(): array
     {
         $values = array_map(function () {
             return mt_rand(100, 999);
         }, [0, 0, 0,]);
+        Yii::$app->session['values'] = serialize($values);
         return $values;
     }
 }
